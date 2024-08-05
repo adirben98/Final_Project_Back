@@ -6,7 +6,7 @@ env.config();
 import bodyParser from "body-parser";
 import cors from "cors";
 import swaggerJsdoc from "swagger-jsdoc";
-import swaggerUI from "swagger-ui-express";
+import swaggerUI from "swagger-ui-express"
 
 
 
