@@ -7,6 +7,8 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUI from "swagger-ui-express"
+import authRouter from "./src/Routes/authRouter";
+import fileRouter from "./src/Routes/fileRouter";
 
 
 
@@ -24,7 +26,7 @@ const init = () => {
               version: "1.0.0",
               description: "REST server including authentication using JWT",
             },
-            servers: [{ url: "https://193.106.55.166:80" }],
+            servers: [{ url: "http://localhost:3000" }],
           },
           apis: ["./src/Routes/*.ts"],
         };
@@ -39,8 +41,8 @@ const init = () => {
         app.use('/public', express.static('public'));
   
         app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
-        // app.use("/file", fileRoute);
-        // app.use("/auth", authRouter);
+        app.use("/file", fileRouter);
+        app.use("/auth", authRouter);
         // app.use("/comment", commentRouter);
   
   

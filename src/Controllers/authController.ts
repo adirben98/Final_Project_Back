@@ -1,20 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import User, { IUser } from "../Models/userModel";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import jwt, { Jwt, JwtPayload, VerifyErrors } from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { Document } from "mongoose";
 
-
-const getUser=async (req: Request, res: Response) => {
-  const username=req.params.name
-  const user=await User.findOne({username:username})
-  if(user){
-    return res.status(200).send(user)
+const getUser = async (req: Request, res: Response) => {
+  const username = req.params.name;
+  try {
+    const user = await User.findOne({ username: username });
+    if (user) {
+      return res.status(200).send(user);
+    }
+  } catch (err: any) {
+    return res.status(400).send(err.message);
   }
-  return res.status(404).send("User not found")
 
-}
+  return res.status(404).send("User not found");
+};
 const register = async (req: Request, res: Response) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -28,7 +31,7 @@ const register = async (req: Request, res: Response) => {
     if (user) {
       return res.status(409).send("User already exists");
     }
-    user=await User.findOne({username:username})
+    user = await User.findOne({ username: username });
     if (user) {
       return res.status(408).send("User already exists");
     }
@@ -51,11 +54,11 @@ const register = async (req: Request, res: Response) => {
       image: newUser.image,
       ...tokens,
     });
-  } catch (err) {
+  } catch (err: any) {
     return res.status(400).send(err.message);
   }
-}
-const isUsernameTaken=async(req: Request, res: Response)=>{
+};
+const isUsernameTaken = async (req: Request, res: Response) => {
   const username = req.body.username;
   if (username === undefined) {
     return res.status(400).send("Username is required");
@@ -66,12 +69,11 @@ const isUsernameTaken=async(req: Request, res: Response)=>{
       return res.status(400).send("Username already exists");
     } else {
       return res.status(200).send("Username is available");
-    }}
-    catch (err) {
-      return res.status(400).send(err.message);
-
     }
-}
+  } catch (err: any) {
+    return res.status(400).send(err.message);
+  }
+};
 const isEmailTaken = async (req: Request, res: Response) => {
   const email = req.body.email;
   if (email === undefined) {
@@ -84,7 +86,7 @@ const isEmailTaken = async (req: Request, res: Response) => {
     } else {
       return res.status(200).send("Email is available");
     }
-  } catch (err) {
+  } catch (err: any) {
     return res.status(400).send(err.message);
   }
 };
@@ -95,28 +97,28 @@ const generateTokens = async (
     Required<{
       _id: string;
     }>
-): Promise<{ accessToken: string; refreshToken: string }> => {
-  // generate token
-  const accessToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET, {
-    expiresIn: process.env.ACCESS_TOKEN_EXPIRATION,
-  });
-  const random = Math.floor(Math.random() * 1000000).toString();
-  const refreshToken = jwt.sign(
-    { _id: user._id, random: random },
-    process.env.TOKEN_SECRET,
-    {}
-  );
-  if (user.tokens == null) {
-    user.tokens = [];
-  }
-  user.tokens.push(refreshToken);
+): Promise<{ accessToken: string; refreshToken: string } | null> => {
   try {
+    // generate token
+    const accessToken = jwt.sign({ _id: user._id }, process.env.TOKEN_SECRET!, {
+      expiresIn: process.env.ACCESS_TOKEN_EXPIRATION,
+    });
+    const random = Math.floor(Math.random() * 1000000).toString();
+    const refreshToken = jwt.sign(
+      { _id: user._id, random: random },
+      process.env.TOKEN_SECRET!,
+      {}
+    );
+    if (user.tokens == null) {
+      user.tokens = [];
+    }
+    user.tokens.push(refreshToken);
     await user.save();
     return {
       accessToken: accessToken,
       refreshToken: refreshToken,
     };
-  } catch (err) {
+  } catch (err: any) {
     return null;
   }
 };
@@ -148,7 +150,7 @@ const login = async (req: Request, res: Response) => {
       image: user.image,
       ...tokens,
     });
-  } catch (err) {
+  } catch (err: any) {
     return res.status(400).send(err.message);
   }
 };
@@ -161,14 +163,14 @@ const googleLogin = async (req: Request, res: Response) => {
       audience: process.env.GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
-    const email = payload.email;
+    const email = payload!.email;
     let user = await User.findOne({ email: email });
     if (user == null) {
       user = await User.create({
         email: email,
-        username: payload.name,
+        username: payload!.name,
         password: "google-login",
-        image: payload.picture,
+        image: payload!.picture,
       });
     }
     const tokens = await generateTokens(user);
@@ -176,53 +178,49 @@ const googleLogin = async (req: Request, res: Response) => {
       email: user.email,
       username: user.username,
       image: user.image,
-      ...tokens
+      ...tokens,
     });
-  } catch (err) {
+  } catch (err:any) {
     return res.status(400).send(err.message);
   }
 };
 
 const refresh = async (req: Request, res: Response) => {
-    const  refreshToken  = extractToken(req);
-    if (refreshToken == null) {
+  const refreshToken = extractToken(req);
+  if (refreshToken == null) {
     return res.sendStatus(401);
   }
   try {
-    jwt.verify(
+    const data = jwt.verify(
       refreshToken,
-      process.env.TOKEN_SECRET,
-      async (err: any, data: jwt.JwtPayload) => {
-        if (err) {
-          return res.sendStatus(403);
-        }
-        const user = await User.findOne({ _id: data._id });
-        if (user == null) {
-          return res.sendStatus(403);
-        }
-        if (!user.tokens.includes(refreshToken)) { 
-          user.tokens = [];
-          await user.save();
-          return res.sendStatus(403);
-        }
-        user.tokens = user.tokens.filter((token) => token !== refreshToken);
-        const tokens = await generateTokens(user);
-        
-        if (tokens == null) {
-          return res.status(400).send("Error generating tokens");
-        }
-        return res.status(200).send(tokens);
-      }
-    );
-  } catch (err) {
-    return res.status(400).send(err.message);
+      process.env.TOKEN_SECRET!
+    ) as JwtPayload;
+
+    const user = await User.findOne({ _id: data._id });
+    if (user == null) {
+      return res.sendStatus(403);
+    }
+    if (!user.tokens.includes(refreshToken)) {
+      user.tokens = [];
+      await user.save();
+      return res.sendStatus(403);
+    }
+    user.tokens = user.tokens.filter((token) => token !== refreshToken);
+    const tokens = await generateTokens(user);
+
+    if (tokens == null) {
+      return res.status(400).send("Error generating tokens");
+    }
+    return res.status(200).send(tokens);
+  } catch (err:any) {
+    return res.status(403).send(err.message);
   }
 };
 
 const extractToken = (req: Request): string => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
-  return token;
+  return token!;
 };
 
 const logout = async (req: Request, res: Response) => {
@@ -231,31 +229,23 @@ const logout = async (req: Request, res: Response) => {
     return res.sendStatus(401);
   }
   try {
-    jwt.verify(
-      refreshToken,
-      process.env.TOKEN_SECRET,
-      async (err, data: jwt.JwtPayload) => {
-        if (err) {
-          return res.sendStatus(403);
-        }
-        const user = await User.findOne({ _id: data._id });
-        if (user == null) {
-          return res.sendStatus(403);
-        }
-        if (!user.tokens.includes(refreshToken)) {
-          user.tokens = [];
-          await user.save();
-          return res.sendStatus(403);
-        }
-        user.tokens = user.tokens.filter((token) => token !== refreshToken);
-        await user.save();
-        return res.status(200).send();
-      }
-    );
-  } catch (err) {
-    return res.status(400).send(err.message);
+    const data = jwt.verify(refreshToken, process.env.TOKEN_SECRET!);
+
+    const user = await User.findOne({ _id: (data as JwtPayload)._id });
+    if (user == null) {
+      return res.sendStatus(403);
+    }
+    if (!user.tokens.includes(refreshToken)) {
+      user.tokens = [];
+      await user.save();
+      return res.sendStatus(403);
+    }
+    user.tokens = user.tokens.filter((token) => token !== refreshToken);
+    await user.save();
+    return res.status(200).send();
+  } catch (err: any) {
+    return res.status(403).send(err.message);
   }
-  res.send("logout");
 };
 const changePassword = async (req: Request, res: Response) => {
   try {
@@ -264,7 +254,7 @@ const changePassword = async (req: Request, res: Response) => {
     const username = req.body.username;
 
     const user = await User.findOne({ username: username });
-    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    const isMatch = await bcrypt.compare(oldPassword, user!.password);
 
     if (user == null || !isMatch) {
       return res.status(400).send("Invalid credentials");
@@ -276,32 +266,28 @@ const changePassword = async (req: Request, res: Response) => {
       new: true,
     });
     return res.status(200).send(response);
-  } catch (err) {
+  } catch (err: any) {
     res.status(400).send(err.message);
   }
 };
 const checkToken = async (req: Request, res: Response) => {
-  const accessToken = extractToken(req); 
+  const accessToken = extractToken(req);
   try {
-    jwt.verify(
-      accessToken, 
-      process.env.TOKEN_SECRET!,
-      (err, data: jwt.JwtPayload) => { 
-        if (err) {
-          return res.sendStatus(403);
-        } else {
-           return res.sendStatus(200);
-        }
+    jwt.verify(accessToken, process.env.TOKEN_SECRET!, (err) => {
+      if (err) {
+        return res.sendStatus(403);
+      } else {
+        return res.sendStatus(200);
       }
-    );
-  } catch (err) {
+    });
+  } catch (err: any) {
     return res.status(400).send(err.message);
   }
 };
 export type AuthRequest = Request & { user: { _id: string } };
 
 export const authMiddleware = async (
-  req: AuthRequest,
+  req: Request,
   res: Response,
   next: NextFunction
 ) => {
@@ -309,30 +295,36 @@ export const authMiddleware = async (
   if (token == null) {
     return res.sendStatus(401);
   }
-  jwt.verify(token, process.env.TOKEN_SECRET, (err, data: jwt.JwtPayload) => {
-    if (err) {
-      return res.status(401).send(err.message);
+  jwt.verify(
+    token,
+    process.env.TOKEN_SECRET!,
+    function (
+      err: VerifyErrors | null,
+      data: string | JwtPayload | Jwt | undefined
+    ) {
+      if (err) {
+        return res.status(401).send(err.message);
+      }
+      if (data) {
+        const id = (data as JwtPayload)._id;
+        (req as AuthRequest).user = { _id: id };
+      }
+      return next();
     }
-    const id = data._id;
-    req.user = { _id: id };
-    return next();
-  });
-   
-  
+  );
 };
-const updateUserImg=async (req: AuthRequest, res: Response) =>{
-  try{
+const updateUserImg = async (req: Request, res: Response) => {
+  try {
     const imgUrl = req.body.imgUrl;
-    const username = req.user._id;
+    const username = (req as AuthRequest).user._id;
     const user = await User.findOne({ _id: username });
-    user.image = imgUrl;
-    await user.save()
-    return res.status(200).send(user)
+    user!.image = imgUrl;
+    await user!.save();
+    return res.status(200).send(user);
+  } catch (err: any) {
+    return res.status(400).send(err.message);
   }
-  catch(err){
-    return res.status(400).send(err.message)
-  }
-}
+};
 
 export default {
   register,
@@ -346,5 +338,5 @@ export default {
   checkToken,
   updateUserImg,
   isUsernameTaken,
-  getUser
-}
+  getUser,
+};
