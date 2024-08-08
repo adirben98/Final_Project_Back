@@ -9,6 +9,8 @@ import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUI from "swagger-ui-express"
 import authRouter from "./src/Routes/authRouter";
 import fileRouter from "./src/Routes/fileRouter";
+import commentRouter from "./src/Routes/commentRouter"; 
+import heroRouter from "./src/Routes/heroRoutes";
 
 
 
@@ -43,7 +45,8 @@ const init = () => {
         app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(swaggerSpec));
         app.use("/file", fileRouter);
         app.use("/auth", authRouter);
-        // app.use("/comment", commentRouter);
+        app.use("/comment", commentRouter);
+        app.use('/hero', heroRouter);
   
   
         resolve(app);

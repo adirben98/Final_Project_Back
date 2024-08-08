@@ -6,11 +6,11 @@ import User from "../Models/userModel";
 class BaseController<ModelInterface> {
   model: mongoose.Model<ModelInterface>;
 
-  constructor(model) {
+  constructor(model:mongoose.Model<ModelInterface>) {
     this.model = model;
   }
 
-  async get(req: AuthRequest, res: Response) {
+  async get(req: Request, res: Response) {
     try {
       if (req.params.id != null) {
         const modelObject = await this.model.findById(req.params.id);
@@ -22,31 +22,33 @@ class BaseController<ModelInterface> {
         const modelObjects = await this.model.find();
         return res.status(200).send(modelObjects);
       }
-    } catch (err) {
+    } catch (err:any) {
       res.status(400).send(err.message);
     }
   }
 
-  async post(req: AuthRequest, res: Response) {
+  async post(req: Request, res: Response) {
     try {
       const modelObject = req.body;
 
       if ("author" in req.body) {
-        const _id = req.user._id;
+        const _id = (req as AuthRequest).user._id;
         const user = await User.findById({ _id: _id });
         modelObject.author = user!.username;
       }
 
       const newModelObject = await this.model.create(modelObject);
       res.status(201).send(newModelObject);
-    } catch (err) {
+    } catch (err:any) {
       res.status(400).send(err.message);
     }
   }
 
-  async edit(req: AuthRequest, res: Response) {
+  async edit(req: Request, res: Response) {
     try {
-      
+        if ("edited" in req.body) {
+            req.body.edited = true;
+        }
         const modelObject = req.body;
         const updatedModel = await this.model.findByIdAndUpdate(
           modelObject._id,
@@ -55,7 +57,7 @@ class BaseController<ModelInterface> {
         );
         res.status(200).send(updatedModel);
       
-    } catch (err) {
+    } catch (err:any) {
       res.status(400).send(err.message);
     }
   }
@@ -66,7 +68,7 @@ class BaseController<ModelInterface> {
         await this.model.findByIdAndDelete({ _id: req.params.id });
         return res.status(200).send();
       }
-    } catch (err) {
+    } catch (err:any) {
       res.status(400).send(err.message);
     }
   }
