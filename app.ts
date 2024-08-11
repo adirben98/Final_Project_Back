@@ -11,6 +11,7 @@ import authRouter from "./src/Routes/authRouter";
 import fileRouter from "./src/Routes/fileRouter";
 import commentRouter from "./src/Routes/commentRouter"; 
 import heroRouter from "./src/Routes/heroRoutes";
+import bookRouter from "./src/Routes/bookRouter";
 
 
 
@@ -47,6 +48,7 @@ const init = () => {
         app.use("/auth", authRouter);
         app.use("/comment", commentRouter);
         app.use('/hero', heroRouter);
+        app.use('/book',bookRouter)
   
   
         resolve(app);

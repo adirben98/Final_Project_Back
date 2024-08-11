@@ -17,7 +17,7 @@ import { authMiddleware } from "../Controllers/authController";
  *       type: object
  *       required:
  *         - content
- *         - recipeid
+ *         - bookId
  *       properties:
  *         content:
  *           type: string
@@ -25,17 +25,17 @@ import { authMiddleware } from "../Controllers/authController";
  *         author:
  *           type: string
  *           description: The comment author
- *         recipeid:
+ *         bookId:
  *           type: string
- *           description: The comment recipe id
+ *           description: The comment book id
  *         createdAt:
  *           type: string
  *           format: date-time
  *           description: The comment creation date
  *       example:
- *         content: "that is a great recipe"
+ *         content: "This is an amazing book!"
  *         author: "User123"
- *         recipeId: "123124143"
+ *         bookId: "123124143"
  *         createdAt: "2023-07-15T19:20:30Z"
  */
 
@@ -43,21 +43,21 @@ import { authMiddleware } from "../Controllers/authController";
  * @swagger
  * /comment/{id}:
  *   get:
- *     summary: Get comments by recipe id
+ *     summary: Get comments by book id
  *     description: Need to provide the access token in the auth header.
  *     tags: [Comment]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: recipeId
+ *         name: bookId
  *         required: true
  *         schema:
  *           type: string
- *         description: The recipe id
+ *         description: The book id
  *     responses:
  *       200:
- *         description: The comments by recipe id
+ *         description: The comments by book id
  *         content:
  *           application/json:
  *             schema:
@@ -72,7 +72,7 @@ commentRouter.get("/:id", authMiddleware, commentController.getCommentsByBookId.
  * /comment:
  *   post:
  *     summary: Post a comment
- *     description: Need to provide the access token in the auth header. Also, provide the recipe id you comment for.
+ *     description: Need to provide the access token in the auth header. Also, provide the book id you are commenting on.
  *     tags: [Comment]
  *     security:
  *       - bearerAuth: []
