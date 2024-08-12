@@ -5,6 +5,7 @@ export interface IBook{
     title: string;
     author: string;
     authorImg:string;
+    hero?: string;
     description: string;
     paragraphs: string[];
     images: string[];

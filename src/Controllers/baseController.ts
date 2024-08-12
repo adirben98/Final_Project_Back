@@ -20,7 +20,7 @@ class BaseController<ModelInterface> {
         return res.status(404).send();
       } else {
         const modelObjects = await this.model.find();
-        return res.status(200).send(modelObjects);
+        return res.status(200).send(modelObjects.reverse());
       }
     } catch (err:any) {
       res.status(400).send(err.message);

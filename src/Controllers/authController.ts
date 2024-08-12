@@ -326,6 +326,16 @@ const updateUserImg = async (req: Request, res: Response) => {
   }
 };
 
+const search = async (req: Request, res: Response) => {
+    const query = req.params.query;
+    try {
+        const users = await User.find({ username: { $regex: query, $options: "i" } });
+        return res.status(200).send(users);
+    } catch (err: any) {
+        return res.status(400).send(err.message);
+    }
+}
+
 export default {
   register,
   isEmailTaken,
@@ -339,4 +349,5 @@ export default {
   updateUserImg,
   isUsernameTaken,
   getUser,
+  search
 };

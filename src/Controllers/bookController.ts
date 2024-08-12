@@ -2,6 +2,7 @@ import BaseController from "./baseController";
 import Book, { IBook } from "../Models/bookModel";
 import { Request, Response } from "express";
 import User from "../Models/userModel";
+import { AuthRequest } from "./authController";
 
 class BookController extends BaseController<IBook> {
   constructor() {
@@ -11,9 +12,9 @@ class BookController extends BaseController<IBook> {
     try {
       const user = await User.findOne({ username: req.params.name });
       const userFavorites = user!.favorites;
-      let favorites:IBook[] = [];
+      let favorites: IBook[] = [];
       for (let i = 0; i < userFavorites.length; i++) {
-        const book:IBook | null = await Book.findById(userFavorites[i]);
+        const book: IBook | null = await Book.findById(userFavorites[i]);
         favorites.push(book!);
       }
       const userBooks = await Book.find({ author: user!.username });
@@ -23,13 +24,74 @@ class BookController extends BaseController<IBook> {
         favorites: favorites,
       });
     } catch (err: any) {
-        res.status(400).send(err.message);
+      res.status(400).send(err.message);
     }
   };
-  getBooksByAuthor = async (req: Request, res: Response) => {
+  likeIncrement = async (req: Request, res: Response) => {
     try {
-      const author = req.params.author;
-      const books = await Book.find({ author: author });
+      const username = (req as AuthRequest).user._id;
+      const bookId = req.params.id;
+      const book = await Book.findById(bookId);
+      if (book?.likedBy.includes(username)) {
+        return res.status(409).send("User already liked this book");
+      } else {
+        book!.likedBy.push(username);
+        await book!.save();
+        return res.status(200).send(book);
+      }
+    } catch (err: any) {
+      res.status(400).send(err.message);
+    }
+  };
+
+  likeDecrement = async (req: Request, res: Response) => {
+    try {
+      const username = (req as AuthRequest).user._id;
+      const bookId = req.params.id;
+      const book = await Book.findById(bookId);
+      if (!book?.likedBy.includes(username)) {
+        return res.status(409).send("User has not liked this book");
+      } else {
+        book!.likedBy = book!.likedBy.filter((id) => id !== username);
+        await book!.save();
+        return res.status(200).send(book);
+      }
+    } catch (err: any) {
+      res.status(400).send(err.message);
+    }
+  };
+
+  isLiked = async (req: Request, res: Response) => {
+    try {
+      const username = (req as AuthRequest).user._id;
+      const bookId = req.params.id;
+      const book = await Book.findById(bookId);
+      if (book?.likedBy.includes(username)) {
+        return res.status(200).send(true);
+      } else {
+        return res.status(200).send(false);
+      }
+    } catch (err: any) {
+      res.status(400).send(err.message);
+    }
+  };
+
+  search = async (req: Request, res: Response) => {
+    try {
+      const query = req.params.query;
+      const books = await Book.find({
+        title: { $regex: query, $options: "i" },
+      });
+      res.status(200).send(books);
+    } catch (err: any) {
+      res.status(400).send(err.message);
+    }
+  };
+
+  searchByHero = async (req: Request, res: Response) => {
+    try {
+      const hero = req.params.hero;
+      const books = await Book.find({ hero: hero });
       res.status(200).send(books);
     } catch (err: any) {
       res.status(400).send(err.message);

@@ -152,5 +152,6 @@ heroRouter.put('/', authMiddleware, heroController.edit.bind(heroController));
  *         description: The hero was not found
  */
 heroRouter.delete('/:id', authMiddleware, heroController.delete.bind(heroController));
+heroRouter.get('/search/:name', authMiddleware, heroController.search.bind(heroController));
 
 export default heroRouter;

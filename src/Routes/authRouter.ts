@@ -366,5 +366,6 @@ authRouter.put("/changePassword", authMiddleware, authController.changePassword)
  *         description: Internal server error
  */
 authRouter.get("/getUser/:name", authMiddleware, authController.getUser);
+authRouter.get("/search/:query", authMiddleware, authController.search);
 
 export default authRouter;
