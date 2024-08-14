@@ -29,14 +29,17 @@ class BookController extends BaseController<IBook> {
   };
   likeIncrement = async (req: Request, res: Response) => {
     try {
-      const username = (req as AuthRequest).user._id;
+      const userId = (req as AuthRequest).user._id;
+      const user=await User.findById(userId)
       const bookId = req.params.id;
       const book = await Book.findById(bookId);
-      if (book?.likedBy.includes(username)) {
+      if (book?.likedBy.includes(userId)) {
         return res.status(409).send("User already liked this book");
       } else {
-        book!.likedBy.push(username);
+        user!.favorites.push(bookId)
+        book!.likedBy.push(userId);
         await book!.save();
+        await user?.save()
         return res.status(200).send(book);
       }
     } catch (err: any) {
@@ -46,13 +49,16 @@ class BookController extends BaseController<IBook> {
 
   likeDecrement = async (req: Request, res: Response) => {
     try {
-      const username = (req as AuthRequest).user._id;
+      const userId = (req as AuthRequest).user._id;
+      const user= await User.findById(userId)
       const bookId = req.params.id;
       const book = await Book.findById(bookId);
-      if (!book?.likedBy.includes(username)) {
+      if (!book?.likedBy.includes(userId)) {
         return res.status(409).send("User has not liked this book");
       } else {
-        book!.likedBy = book!.likedBy.filter((id) => id !== username);
+        user?.favorites.push(bookId)
+        book!.likedBy = book!.likedBy.filter((id) => id !== userId);
+        await user?.save()
         await book!.save();
         return res.status(200).send(book);
       }
@@ -63,10 +69,10 @@ class BookController extends BaseController<IBook> {
 
   isLiked = async (req: Request, res: Response) => {
     try {
-      const username = (req as AuthRequest).user._id;
+      const userId = (req as AuthRequest).user._id;
       const bookId = req.params.id;
       const book = await Book.findById(bookId);
-      if (book?.likedBy.includes(username)) {
+      if (book?.likedBy.includes(userId)) {
         return res.status(200).send(true);
       } else {
         return res.status(200).send(false);
