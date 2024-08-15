@@ -38,6 +38,7 @@ class BookController extends BaseController<IBook> {
       } else {
         user!.favorites.push(bookId)
         book!.likedBy.push(userId);
+        book.likes+=1
         await book!.save();
         await user?.save()
         return res.status(200).send(book);
@@ -58,6 +59,7 @@ class BookController extends BaseController<IBook> {
       } else {
         user?.favorites.push(bookId)
         book!.likedBy = book!.likedBy.filter((id) => id !== userId);
+        book.likes-=1
         await user?.save()
         await book!.save();
         return res.status(200).send(book);
