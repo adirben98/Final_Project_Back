@@ -1,23 +1,16 @@
-import express from "express";
+import express, { Request, Response } from "express";
 const router = express.Router();
-import multer from "multer";
-const base = "https://193.106.55.140:80/"
-const storage = multer.diskStorage ({
- destination : function (req, file, cb) {
-    cb(null, 'public/')
-    },
-    filename: function (req, file, cb) {
-    const ext = file.originalname .split('.')
-    . filter(Boolean) 
-    . slice(1)
-    . join('.')
-    cb(null, Date.now() + "." + ext)
-    }
-})
-const upload = multer({ storage: storage });
-router.post('/', upload.single("file"), function (req, res) {
- res.status(200).send({ url: base + req.file!.path })
+import func, { upload, downloadImage } from "../Controllers/fileController";
+router.post("/download", (req: Request, res: Response) => {
+  downloadImage(req.body.url)
+    .then((path) => {
+      res.status(200).send({ path });
+    })
+    .catch((err) => {
+      res.status(500).send({ message: err.message });
+    });
 });
+router.post("/", upload.single("file"), func);
 /**
  * @swagger
  * /file:

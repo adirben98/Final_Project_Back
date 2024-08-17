@@ -7,11 +7,11 @@ import bodyParser from "body-parser";
 import cors from "cors";
 import swaggerJsdoc from "swagger-jsdoc";
 import swaggerUI from "swagger-ui-express"
-import authRouter from "./src/Routes/authRouter";
-import fileRouter from "./src/Routes/fileRouter";
-import commentRouter from "./src/Routes/commentRouter"; 
-import heroRouter from "./src/Routes/heroRoutes";
-import bookRouter from "./src/Routes/bookRouter";
+import authRouter from "./Routes/authRouter";
+import fileRouter from "./Routes/fileRouter";
+import commentRouter from "./Routes/commentRouter"; 
+import heroRouter from "./Routes/heroRoutes";
+import bookRouter from "./Routes/bookRouter";
 
 
 

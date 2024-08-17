@@ -5,8 +5,9 @@ export interface IBook{
     title: string;
     author: string;
     authorImg:string;
-    hero?: string;
+    hero: string;
     description: string;
+    prompts: string[];
     paragraphs: string[];
     images: string[];
     coverImg: string;
@@ -28,8 +29,16 @@ const BookeSchema=new mongoose.Schema<IBook>({
         type:String,
         required:true
     },
+    hero:{
+        type:String,
+        required:true
+    },
     description:{
         type:String,
+        required:true
+    },
+    prompts:{
+        type:[String],
         required:true
     },
     paragraphs:{
@@ -38,7 +47,7 @@ const BookeSchema=new mongoose.Schema<IBook>({
     },
     images:{
         type:[String],
-        required:true
+        default:[]
     },
     coverImg:{
         type:String,

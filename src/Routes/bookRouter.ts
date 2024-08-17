@@ -266,5 +266,6 @@ bookRouter.get("/searchByHero/:hero", authMiddleware, bookController.searchByHer
  *         description: Server error
  */
 bookRouter.delete("/:id", authMiddleware, bookController.delete.bind(bookController));
+bookRouter.post('/generateBook',authMiddleware,bookController.generateStory.bind(bookController))
 
 export default bookRouter;
