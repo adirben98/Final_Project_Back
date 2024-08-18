@@ -41,7 +41,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "fileTest":"tsc && jest --detectOpenHandles --forceExit ./src/tests/file.test.ts",
-    "dev": "nodemon server.ts",
+    "dev": "nodemon ./src/server.ts",
     "lint": "eslint . ",
     "prod": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production"
   },
