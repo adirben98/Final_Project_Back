@@ -4,7 +4,9 @@ import path from 'path'
 import fs from 'fs'
 import axios from 'axios'
 import { v4 as uuidv4 } from 'uuid'
-export const base = "https://193.106.55.140:80/";
+//export const base = "https://193.106.55.140:80/";
+export const base = "http://localhost:3000/";
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "public/");
@@ -43,8 +45,7 @@ export const downloadImage = async (url: string): Promise<string> => {
       });
   
       console.log(`Image downloaded and saved to ${filePath}`);
-      return filePath
-      
+      return base + "public/" + filename;      
     } catch (error) {
       console.error("Error downloading the image:", error.message);
       throw error;

@@ -52,7 +52,7 @@ class BookController extends BaseController<IBook> {
     try{
       const response = await openai.images.generate({
         model: "dall-e-3",
-        prompt: `Generate a cover image for a story titled ${title} and the description of the story is: ${description}.`,
+        prompt: `Generate a cover image for a story titled ${title} and the description of the story is: ${description}., please add the title of the photo to the photo and do not add the description to the photo!`,
       });
       let url:string
       if(response.data[0].url){
