@@ -49,21 +49,23 @@ class BookController extends BaseController<IBook> {
     }
   };
   generateCover = async (title: string, description: string) => {
-    const completions = await openai.chat.completions.create({
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Generate a cover image for a story titled ${title} and the description of the story is: ${description}`,
-            },
-          ],
-        },
-      ],
-      model: "dall-e-3",
-    });
-    return completions.choices[0].message.content;
+    try{
+      const response = await openai.images.generate({
+        model: "dall-e-3",
+        prompt: `Generate a cover image for a story titled ${title} and the description of the story is: ${description}.`,
+      });
+      let url:string
+      if(response.data[0].url){
+        url = await downloadImage(response.data[0].url);
+        return url  
+      }
+      return ""
+    }
+    catch(err:any){
+      console.log(err)
+      return ""
+    }
+    
   };
   generateTitle = async (story: string[]) => {
     const completions = await openai.chat.completions.create({
@@ -147,7 +149,7 @@ class BookController extends BaseController<IBook> {
           content: [
             {
               type: "text",
-              text: `Create a short prompt that describe a photo that reflects the scene that being read in the paragraph. This is the paragraph you should make the prompt on:${paragraph}. After you created the prompt, scan the prompt and when you encounter a setting from the:${settings} what i need you to do is to add the character's or the place's right setting after the name of the setting.This is an example to how you should make your prompt correctly: ${example}. Make sure to start your answer without any introduction. In addition make sure you make a description to every element in the paragraph. Every character whenever mentioned gets a description.  Dont add ** before the prompt or after it. finally scan the prompt and make sure the prompt not exceeding 4000 charcters, which means that if it does exceed, you should elimenate unneccessery words but still make the contest as it was.`,
+              text: `Create a short prompt that describe a photo that reflects the scene that being read in the paragraph (make sure you dont enter inappropriate words). This is the paragraph you should make the prompt on:${paragraph}. After you created the prompt, scan the prompt and when you encounter a setting from the:${settings} what i need you to do is to add the character's or the place's right setting after the name of the setting.This is an example to how you should make your prompt correctly: ${example}. Make sure to start your answer without any introduction. In addition make sure you make a description to every element in the paragraph. Every character whenever mentioned gets a description.  Dont add ** before the prompt or after it. finally scan the prompt and make sure the prompt not exceeding 4000 charcters, which means that if it does exceed, you should elimenate unneccessery words but still make the contest as it was.`,
             },
           ],
         },
