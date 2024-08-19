@@ -10,6 +10,7 @@
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
+    "docx": "^8.5.0",
     "dotenv": "^16.4.5",
     "eslint": "^9.0.0",
     "express": "^4.19.2",
@@ -19,11 +20,11 @@
     "mongoose": "^8.3.2",
     "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
+    "officegen": "^0.6.5",
     "openai": "^4.55.7",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.5.4",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
@@ -33,14 +34,16 @@
     "jest": "^29.7.0",
     "nodemon": "^3.1.0",
     "supertest": "^6.3.4",
-    "ts-jest": "^29.1.2"
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.5.4"
   },
   "name": "backend",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "fileTest":"tsc && jest --detectOpenHandles --forceExit ./src/tests/file.test.ts",
+    "fileTest": "tsc && jest --detectOpenHandles --forceExit ./src/tests/file.test.ts",
+    "bookTest": "tsc && jest --detectOpenHandles --forceExit ./src/tests/book.test.ts",
     "dev": "nodemon ./src/server.ts",
     "lint": "eslint . ",
     "prod": "tsc -p tsconfig_prod.json && pm2 restart ecosystem.config.js --env production"
@@ -48,4 +51,5 @@
   "author": "",
   "license": "ISC",
   "description": ""
+  
 }

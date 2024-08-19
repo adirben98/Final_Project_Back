@@ -4,7 +4,12 @@ import { Request, Response } from "express";
 import User from "../Models/userModel";
 import { AuthRequest } from "./authController";
 import OpenAi from "openai";
-import {downloadImage,generateUniqueFilename} from "./fileController";
+import { downloadImage } from "./fileController";
+import officegen from "officegen";
+
+import { Document, Packer as DocxPacker, Paragraph, HeadingLevel, ImageRun, AlignmentType, PageBreak,  } from "docx";
+import axios from "axios";
+const docx = officegen("docx");
 const openai = new OpenAi({
   apiKey: process.env.OPEN_AI_API_KEY,
 });
@@ -172,9 +177,9 @@ class BookController extends BaseController<IBook> {
       });
 
       const data = response;
-      let url:string;
+      let url: string;
       if (data.data[0].url !== undefined) {
-        url=await downloadImage(data.data[0].url)
+        url = await downloadImage(data.data[0].url);
         const book = await Book.findById(req.params.id);
         const index = req.body.index;
         if (index === -1) {
@@ -187,13 +192,11 @@ class BookController extends BaseController<IBook> {
           }
         }
         book!.save();
-        
-      console.log(url);
-      return res.status(200).send(url);
+
+        console.log(url);
+        return res.status(200).send(url);
       }
       res.status(400).send("Error in generating photo");
-
-
     } catch (error: any) {
       console.error("Error in generatePhoto:", error);
       res.status(400).send(error);
@@ -297,5 +300,127 @@ class BookController extends BaseController<IBook> {
       res.status(400).send(err.message);
     }
   };
+
+  toDocx = async (req: Request, res: Response) => {
+    try {
+        const book = await Book.findById(req.body.bookId);
+        if (!book) {
+            return res.status(404).send('Book not found');
+        }
+
+        // Helper function to fetch an image from a URL and return it as a Buffer
+        const fetchImage = async (url: string): Promise<Buffer> => {
+            const response = await axios.get(url, { responseType: 'arraybuffer' });
+            return Buffer.from(response.data, 'binary');
+        };
+
+        // Fetch cover image and other images
+        const coverImageBuffer = await fetchImage(book.coverImg);
+        const imageBuffers = await Promise.all(book.images.map(fetchImage));
+
+        // Create the document
+        const doc = new Document({
+            sections: [
+                {
+                    properties: {},
+                    children: [
+                        new Paragraph({
+                            text: book.title,
+                            heading: HeadingLevel.TITLE,
+                            alignment: AlignmentType.CENTER,
+                        }),
+                        new Paragraph({
+                            text: `Author: ${book.author}`,
+                            heading: HeadingLevel.HEADING_2,
+                        }),
+                        new Paragraph({
+                            text: `Hero: ${book.hero}`,
+                            heading: HeadingLevel.HEADING_3,
+                        }),
+                        new Paragraph({
+                            text: "Description:",
+                            heading: HeadingLevel.HEADING_3,
+                        }),
+                        new Paragraph({
+                            text: book.description,
+                            spacing: {
+                                after: 200,
+                            },
+                        }),
+                        new Paragraph({
+                            text: "Cover Image:",
+                            heading: HeadingLevel.HEADING_3,
+                        }),
+                        new Paragraph({
+                            children: [
+                                new ImageRun({
+                                    data: coverImageBuffer,
+                                    transformation: {
+                                        width: 400,
+                                        height: 300,
+                                    },
+                                }),
+                            ],
+                            alignment: AlignmentType.CENTER,
+                        }),
+                        ...book.paragraphs.map((paragraph, index) => [
+                            new Paragraph({
+                                text: `Paragraph ${index + 1}:`,
+                                heading: HeadingLevel.HEADING_4,
+                            }),
+                            new Paragraph({
+                                text: paragraph,
+                                spacing: {
+                                    after: 200,
+                                },
+                            }),
+                            new Paragraph({
+                                children: [new PageBreak()],
+                            }),
+                        ]).flat(),
+                        ...imageBuffers.map((buffer, index) => [
+                            new Paragraph({
+                                text: `Image ${index + 1}:`,
+                                heading: HeadingLevel.HEADING_4,
+                                spacing: {
+                                    after: 200,
+                                },
+                            }),
+                            new Paragraph({
+                                children: [
+                                    new ImageRun({
+                                        data: buffer,
+                                        transformation: {
+                                            width: 400,
+                                            height: 300,
+                                        },
+                                    }),
+                                ],
+                                alignment: AlignmentType.CENTER,
+                            }),
+                            new Paragraph({
+                                children: [new PageBreak()],
+                            }),
+                        ]).flat(),
+                    ],
+                },
+            ],
+        });
+
+        // Generate the document as a buffer
+        const buffer = await DocxPacker.toBuffer(doc);
+
+        // Set the response headers for a Word document
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${book.title}.docx"`);
+
+        // Send the buffer as the response
+        res.send(buffer);
+
+    } catch (error) {
+        console.error('Error generating document:', error);
+        return res.status(500).send('Internal Server Error');
+    }
+};
 }
 export default new BookController();

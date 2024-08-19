@@ -11,12 +11,12 @@ export interface IBook{
     paragraphs: string[];
     images: string[];
     coverImg: string;
-    likes: number;
-    likedBy: string[];
-    createdAt: string;
+    likes?: number;
+    likedBy?: string[];
+    createdAt?: string;
 }
 
-const BookeSchema=new mongoose.Schema<IBook>({
+const BookSchema=new mongoose.Schema<IBook>({
     title:{
         type:String,
         required:true
@@ -67,4 +67,4 @@ const BookeSchema=new mongoose.Schema<IBook>({
     },
 })
 
-export default mongoose.model<IBook>("Booke",BookeSchema); 
+export default mongoose.model<IBook>("Book",BookSchema); 
