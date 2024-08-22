@@ -268,5 +268,6 @@ bookRouter.get("/searchByHero/:hero", authMiddleware, bookController.searchByHer
 bookRouter.delete("/:id", authMiddleware, bookController.delete.bind(bookController));
 bookRouter.post('/generateBook',authMiddleware,bookController.generateStory.bind(bookController))
 bookRouter.post('/toDocx',authMiddleware,bookController.toDocx.bind(bookController))
+bookRouter.post('/generateImage/:id',authMiddleware,bookController.generateImage.bind(bookController))
 
 export default bookRouter;
