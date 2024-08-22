@@ -196,62 +196,53 @@ class BookController extends BaseController<IBook> {
           content: [
             {
               type: "text",
-              text: `Create a short prompt that describe a photo that reflects the scene that being read in the paragraph (make sure you dont enter inappropriate words). This is the paragraph you should make the prompt on:${paragraph}. After you created the prompt, scan the prompt and when you encounter a setting from the:${settings} what i need you to do is to add the character's or the place's right setting after the name of the setting.This is an example to how you should make your prompt correctly: ${example}. Make sure to start your answer without any introduction. In addition make sure you make a description to every element in the paragraph. Every character whenever mentioned gets a description.  Dont add ** before the prompt or after it. finally scan the prompt and make sure the prompt not exceeding 4000 charcters, which means that if it does exceed, you should elimenate unneccessery words but still make the contest as it was.`,
+              text: `Create a short prompt that describe a photo that reflects the scene that being read in the paragraph.The most important thing is that the prompt you return wont violate dalle-3 api cintent policy!. This is the paragraph you should make the prompt on:${paragraph}. After you created the prompt, scan the prompt and when you encounter a setting from the:${settings} what i need you to do is to add the character's or the place's right setting after the name of the setting.This is an example to how you should make your prompt correctly: ${example}. Make sure to start your answer without any introduction. In addition make sure you make a description to every element in the paragraph. Every character whenever mentioned gets a description.  Dont add ** before the prompt or after it. finally scan the prompt and make sure the prompt not exceeding 4000 charcters, which means that if it does exceed, you should elimenate unneccessery words but still make the contest as it was.`,
             },
           ],
         },
       ],
       model: "gpt-4o",
-      max_tokens: 950,
+      max_tokens: 850,
     });
     return completions.choices[0].message.content;
   };
 
   generateImage = async (req: Request, res: Response) => {
     try {
-    
-    const { hero, prompt ,index} = req.body;
-    const book = await Book.findById(req.params.id);
-    console.log(hero);
+      const { hero, prompt, index } = req.body;
+      const book = await Book.findById(req.params.id);
+      console.log(hero);
 
-    console.log(style[hero]);
-    if (index===-1){
-      book.coverImg=await this.generateCover(book.title,book.description);
-      await book.save();
-      return res.status(200).send(book.coverImg);
-    }
-    else{
+      console.log(style[hero]);
+      if (index === -1) {
+        book.coverImg = await this.generateCover(book.title, book.description);
+        await book.save();
+        return res.status(200).send(book.coverImg);
+      } else {
+        const response = await openai.images.generate({
+          model: "dall-e-3",
+          prompt: `Generate an image according to this prompt: ${prompt}, make the images in the photo in style of ${style[hero]}.`,
+        });
 
-      const response = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: `Generate an image according to this prompt: ${prompt}, make the images in the photo in style of ${style[hero]}.`,
-      });
+        const data = response;
+        let url: string;
+        if (data.data[0].url !== undefined) {
+          url = await downloadImage(data.data[0].url);
 
-      const data = response;
-      let url: string;
-      if (data.data[0].url !== undefined) {
-        url = await downloadImage(data.data[0].url);
-
-        
-        if (index === 0) {
-          book!.coverImg = url;
-        } else {
           if (book!.images.length <= index) {
             book!.images.push(url);
           } else {
             book!.images[index] = url;
           }
-        }
-        book!.save();
 
-        console.log(url);
-        return res.status(200).send(url);}
+          await book!.save();
+
+          console.log(url);
+          return res.status(200).send(url);
+        }
       }
       res.status(400).send("Error in generating photo");
-    } catch (error: any) {
-      console.error("Error in generatePhoto:", error);
-      res.status(400).send(error);
-    }
+    } catch (error: any) {}
   };
 
   getUserBooksAndFavorites = async (req: Request, res: Response) => {
