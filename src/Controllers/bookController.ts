@@ -324,6 +324,14 @@ class BookController extends BaseController<IBook> {
       res.status(400).send(err.message);
     }
   };
+  getTopBooks = async (req: Request, res: Response) => {
+    try {
+      const books = await Book.find().sort({ likes: -1 }).limit(5);
+      res.status(200).send(books);
+    } catch (err: any) {
+      res.status(400).send(err.message);
+    }
+  }
 
   search = async (req: Request, res: Response) => {
     try {
