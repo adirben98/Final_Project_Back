@@ -36,7 +36,7 @@ class BookController extends BaseController<IBook> {
     try {
       const isViolate = await this.checkPrompt(req.body.prompt);
       if (isViolate) {
-        return res.status(400).send("Prompt violates content policies");
+        return res.status(400).send("Prompt violates content policy");
       }
       const userId = (req as AuthRequest).user._id;
       const user = await User.findById(userId);
@@ -101,7 +101,7 @@ class BookController extends BaseController<IBook> {
     try {
       const response = await openai.images.generate({
         model: "dall-e-3",
-        prompt: `Generate a cover image for a story titled ${title} and the description of the story is: ${description}., please add the title of the photo to the photo and do not add the description to the photo!`,
+        prompt: `Generate a cover image for a story titled ${title} and the description of the story is: ${description}., please add the ${title} to the photo and do not add the ${description} to the photo!`,
       });
       let url: string;
       if (response.data[0].url) {
@@ -122,7 +122,7 @@ class BookController extends BaseController<IBook> {
           content: [
             {
               type: "text",
-              text: `Generate a title for the story that is being read in the next paragraphs: ${story}`,
+              text: `Generate a title for the story that is being read in the next paragraphs: ${story}. make sure to remove any additions to your answer, for example dont return this **go on**, return this: go on`,
             },
           ],
         },
@@ -139,7 +139,7 @@ class BookController extends BaseController<IBook> {
           content: [
             {
               type: "text",
-              text: `Generate a short description for the story that is being read in the next paragraphs: ${story}`,
+              text: `Generate a short description for the story that is being read in the next paragraphs: ${story}. make sure to remove any additions to your answer, for example dont return this **go on**, return this: go on`,
             },
           ],
         },
@@ -196,7 +196,7 @@ class BookController extends BaseController<IBook> {
           content: [
             {
               type: "text",
-              text: `Create a short prompt that describe a photo that reflects the scene that being read in the paragraph.The most important thing is that the prompt you return wont violate dalle-3 api cintent policy!. This is the paragraph you should make the prompt on:${paragraph}. After you created the prompt, scan the prompt and when you encounter a setting from the:${settings} what i need you to do is to add the character's or the place's right setting after the name of the setting.This is an example to how you should make your prompt correctly: ${example}. Make sure to start your answer without any introduction. In addition make sure you make a description to every element in the paragraph. Every character whenever mentioned gets a description.  Dont add ** before the prompt or after it. finally scan the prompt and make sure the prompt not exceeding 4000 charcters, which means that if it does exceed, you should elimenate unneccessery words but still make the contest as it was.`,
+              text: `Create a short prompt that describe a photo that reflects the scene that being read in the paragraph.The most important thing is that the prompt you return wont violate dalle-3 api content policy!. This is the paragraph you should make the prompt on:${paragraph}. After you created the prompt, scan the prompt and when you encounter a setting from the:${settings} what i need you to do is to add the character's or the place's right setting after the name of the setting.This is an example to how you should make your prompt correctly: ${example}. Make sure to start your answer without any introduction. In addition make sure you make a description to every element in the paragraph. Every character whenever mentioned gets a description.  Dont add ** before the prompt or after it. finally scan the prompt and make sure the prompt not exceeding 4000 charcters, which means that if it does exceed, you should elimenate unneccessery words but still make the contest as it was.`,
             },
           ],
         },
