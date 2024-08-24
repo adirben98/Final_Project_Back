@@ -213,36 +213,88 @@ class BookController extends BaseController<IBook> {
       const book = await Book.findById(req.params.id);
       console.log(hero);
 
-      console.log(style[hero]);
+      const processImageGeneration = async (
+        currentPrompt: string
+      ): Promise<string | null> => {
+        try {
+          const response = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: `Generate an image according to this prompt: ${currentPrompt}, make the images in the style of ${style[hero]}.`,
+          });
+
+          const data = response;
+          if (data.data[0].url !== undefined) {
+            const url = await downloadImage(data.data[0].url);
+
+            if (book!.images.length <= index) {
+              book!.images.push(url);
+            } else {
+              book!.images[index] = url;
+            }
+
+            await book!.save();
+            console.log(url);
+            return url;
+          } else {
+            throw new Error("No URL returned from image generation");
+          }
+        } catch (error: any) {
+          console.log("Error during image generation, retrying...");
+          return null;
+        }
+      };
+
       if (index === -1) {
         book.coverImg = await this.generateCover(book.title, book.description);
         await book.save();
         return res.status(200).send(book.coverImg);
       } else {
-        const response = await openai.images.generate({
-          model: "dall-e-3",
-          prompt: `Generate an image according to this prompt: ${prompt}, make the images in the photo in style of ${style[hero]}.`,
-        });
+        let resultUrl = await processImageGeneration(prompt);
 
-        const data = response;
-        let url: string;
-        if (data.data[0].url !== undefined) {
-          url = await downloadImage(data.data[0].url);
+        if (!resultUrl) {
+          const disinfectPrompt = await this.disinfectPrompt(prompt); 
+          resultUrl = await processImageGeneration(disinfectPrompt); 
 
-          if (book!.images.length <= index) {
-            book!.images.push(url);
-          } else {
-            book!.images[index] = url;
+          if (resultUrl) {
+
+            book.prompts[index] = disinfectPrompt;
+
+            await book.save();
           }
+        }
 
-          await book!.save();
-
-          console.log(url);
-          return res.status(200).send(url);
+        if (resultUrl) {
+          return res.status(200).send(resultUrl);
         }
       }
+
       res.status(400).send("Error in generating photo");
-    } catch (error: any) {}
+    } catch (error: any) {
+      console.error("Unexpected error:", error);
+      res.status(500).send("Internal server error");
+    }
+  };
+  disinfectPrompt = async (prompt: string) => {
+    try {
+      const completions = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: `scan the prompt: ${prompt} and check if there are words that are causing the prompt to violate dalle-3 content policy. If you find any, replace them with other words that have the same meaning but wont violate the content policy. Make sure to start your answer without any introduction.`,
+              },
+            ],
+          },
+        ],
+        model: "gpt-4o",
+      });
+      return completions.choices[0].message.content;
+    } catch (error: any) {
+      console.log(error);
+      return prompt;
+    }
   };
 
   getUserBooksAndFavorites = async (req: Request, res: Response) => {
@@ -331,7 +383,7 @@ class BookController extends BaseController<IBook> {
     } catch (err: any) {
       res.status(400).send(err.message);
     }
-  }
+  };
 
   search = async (req: Request, res: Response) => {
     try {
