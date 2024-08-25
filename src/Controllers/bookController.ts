@@ -210,8 +210,10 @@ class BookController extends BaseController<IBook> {
   generateImage = async (req: Request, res: Response) => {
     try {
       const { hero, prompt, index } = req.body;
+      if (hero === "") {
+        return;
+      }
       const book = await Book.findById(req.params.id);
-      console.log(hero);
 
       const processImageGeneration = async (
         currentPrompt: string
@@ -225,11 +227,12 @@ class BookController extends BaseController<IBook> {
           const data = response;
           if (data.data[0].url !== undefined) {
             const url = await downloadImage(data.data[0].url);
+            console.log(index);
 
-            if (book!.images.length <= index) {
-              book!.images.push(url);
-            } else {
+            if (index < book!.images.length) {
               book!.images[index] = url;
+            } else {
+              book!.images.push(url);
             }
 
             await book!.save();
@@ -252,11 +255,10 @@ class BookController extends BaseController<IBook> {
         let resultUrl = await processImageGeneration(prompt);
 
         if (!resultUrl) {
-          const disinfectPrompt = await this.disinfectPrompt(prompt); 
-          resultUrl = await processImageGeneration(disinfectPrompt); 
+          const disinfectPrompt = await this.disinfectPrompt(prompt);
+          resultUrl = await processImageGeneration(disinfectPrompt);
 
           if (resultUrl) {
-
             book.prompts[index] = disinfectPrompt;
 
             await book.save();
