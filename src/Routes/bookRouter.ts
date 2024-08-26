@@ -60,7 +60,7 @@ import { authMiddleware } from "../Controllers/authController";
  *         description: Bad request
  */
 bookRouter.post("/", authMiddleware, bookController.post.bind(bookController));
-bookRouter.get('/getTopBooks',authMiddleware,bookController.getTopBooks.bind(bookController))
+bookRouter.get('/getTopAndRandomBooks',authMiddleware,bookController.getTopAndRandomBooks.bind(bookController))
 
 
 /**

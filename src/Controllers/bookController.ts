@@ -378,9 +378,14 @@ class BookController extends BaseController<IBook> {
       res.status(400).send(err.message);
     }
   };
-  getTopBooks = async (req: Request, res: Response) => {
+  getTopAndRandomBooks = async (req: Request, res: Response) => {
     try {
-      const books = await Book.find().sort({ likes: -1 }).limit(5);
+      const topBooks = await Book.find().sort({ likes: -1 }).limit(10);
+      const randomBooks = await Book.aggregate([{ $sample: { size: 10 } }]);
+      const books={
+        topTenBooks:topBooks,
+        randomBooks:randomBooks
+      }
       res.status(200).send(books);
     } catch (err: any) {
       res.status(400).send(err.message);
