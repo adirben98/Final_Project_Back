@@ -26,11 +26,11 @@ Before you begin, ensure you have:
    git clone https://github.com/your-username/Final_Project_Backend
    cd Final_Project_Backend
    ```
-2. **Install dependencies:
+2. **Install dependencies**:
    ```
    npm i
    ```
-3. **Set up environment variables:
+3. **Set up environment variables**:
     Create a .env file based on .env.example:
    ```
     PORT=3000
@@ -40,7 +40,7 @@ Before you begin, ensure you have:
     GOOGLE_CLIENT_ID=your_GOOGLE_CLIENT_ID
     OPEN_AI_API_KEY=your_OPEN_AI_API_KEY
    ```
-4. **Run the server:
+4. **Run the server**:
    ```
    npm run dev
    ```
